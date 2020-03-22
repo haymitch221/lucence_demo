@@ -1,0 +1,39 @@
+# java
+*.war
+*.class
+MANIFEST.MF
+
+# eclipse
+.settings/
+.classpath
+.project
+bin/
+classes/
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# maven
+.mvn/
+target/
+
+# myeclipse
+.myeclipse/
+.externalToolBuilders/
+.mymetadata
+
+# vim
+*.swp
+
+# idea
+.idea/*
+*.iml
+
+# Artery
+local.properties
+.artery
+#user-config.properties
+*.log
+
+.vscode
+.DS_Store
+/.idea/
