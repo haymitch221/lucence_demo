@@ -25,7 +25,7 @@ target/
 *.swp
 
 # idea
-.idea/*
+.idea/
 *.iml
 
 # Artery
@@ -36,4 +36,3 @@ local.properties
 
 .vscode
 .DS_Store
-/.idea/
