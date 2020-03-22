@@ -1,7 +1,6 @@
 package salonika.demo;
 
 
-import javafx.util.Pair;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.lucene.analysis.Analyzer;
@@ -21,14 +20,10 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.IOUtils;
 
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 每个文档由若干个 field:text 组成
@@ -43,7 +38,7 @@ import java.util.Map;
  * - - 根据 关键词 在某个 field 中查询
  * - - query方式 关键词也会分词
  * - - term方式 关键词不会分词
- * 存储在系统临时目录中，没有实现数据的恢复
+ * FIXME [TODO.1] 存储在系统临时目录中，没有实现数据的恢复
  */
 public class LuceneService {
 
@@ -91,7 +86,10 @@ public class LuceneService {
         indexDirMap.clear();
     }
 
-    /** 添加文档, 文档名称具有唯一性（后同），已存在时为修改 */
+    /**
+     * 添加文档, 文档名称具有唯一性（后同），
+     * FIXME [TODO.2] 还没有实现 已存在时为修改 的功能，即每次save都是新的文档
+     */
     public void saveDoc(String indexName, String docName, String docContent) throws IOException {
         Directory directory = indexDirMap.get(indexName).getDirectory();
 
@@ -105,7 +103,10 @@ public class LuceneService {
         }
     }
 
-    /** 删除文档 */
+    /**
+     * 删除文档，
+     * FIXME [TODO.3] 并没有实现删掉
+     */
     public void delDoc(String indexName, String docName) throws IOException {
         Directory directory = indexDirMap.get(indexName).getDirectory();
 
@@ -116,7 +117,7 @@ public class LuceneService {
 
     /** 查询文档 */
     public List<Document> searchDoc(String indexName, String keywords) throws IOException, ParseException {
-        List<Document> result = new LinkedList<>();
+        List<Document> result = new ArrayList<>();
         // ** 开始查询
         // Now search the index:
         try (DirectoryReader ireader = DirectoryReader.open(indexDirMap.get(indexName).getDirectory())) {
@@ -133,5 +134,21 @@ public class LuceneService {
         }
         return result;
     }
+
+    /** 返回所有文档 */
+        public List<Document> allDocs(String indexName) throws IOException {
+            List<Document> result = new ArrayList<>();
+            // ** 开始查询
+            // Now search the index:
+            try (DirectoryReader ireader = DirectoryReader.open(indexDirMap.get(indexName).getDirectory())) {
+                IndexSearcher isearcher = new IndexSearcher(ireader);
+                // Iterate through the results:
+                for (int i = 0; i < ireader.maxDoc(); i ++) {
+                    Document hitDoc = isearcher.doc(i);
+                    result.add(hitDoc);
+                }
+            }
+            return result;
+        }
 
 }
