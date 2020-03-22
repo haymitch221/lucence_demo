@@ -2,6 +2,8 @@ package salonika.demo;
 
 
 import javafx.util.Pair;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -53,7 +55,14 @@ public class LuceneService {
     private Analyzer analyzer;
 
     /** 暂存的索引目录 */
-    public Map<String, Pair<Path, Directory>> indexDirMap = new HashMap<>();
+    public Map<String, TempDirectory> indexDirMap = new HashMap<>();
+
+    @Data
+    @AllArgsConstructor
+    public class TempDirectory{
+        private Path path;
+        private Directory directory;
+    }
 
     public LuceneService(Analyzer analyzer){
         this.analyzer = analyzer;
@@ -63,28 +72,28 @@ public class LuceneService {
     public void newIndex(String indexName) throws IOException {
         Path indexPath = Files.createTempDirectory(indexName);
         Directory directory = FSDirectory.open(indexPath);
-        indexDirMap.put(indexName, new Pair<>(indexPath, directory));
+        indexDirMap.put(indexName, new TempDirectory(indexPath, directory));
     }
 
     /** 关闭索引 */
     public void close(String indexName) throws IOException {
-        indexDirMap.get(indexName).getValue().close();
-        IOUtils.rm(indexDirMap.get(indexName).getKey());
+        indexDirMap.get(indexName).getDirectory().close();
+        IOUtils.rm(indexDirMap.get(indexName).getPath());
         indexDirMap.remove(indexName);
     }
 
     /** 关闭所有索引并删除 */
     public void closeAll() throws IOException {
-        for (Pair<Path, Directory> pd : indexDirMap.values()) {
-            pd.getValue().close();
-            IOUtils.rm(pd.getKey());
+        for (TempDirectory td : indexDirMap.values()) {
+            td.getDirectory().close();
+            IOUtils.rm(td.getPath());
         }
         indexDirMap.clear();
     }
 
     /** 添加文档, 文档名称具有唯一性（后同），已存在时为修改 */
     public void saveDoc(String indexName, String docName, String docContent) throws IOException {
-        Directory directory = indexDirMap.get(indexName).getValue();
+        Directory directory = indexDirMap.get(indexName).getDirectory();
 
         try (IndexWriter iwriter = new IndexWriter(directory, new IndexWriterConfig(analyzer))) {
             Document doc = new Document();
@@ -98,7 +107,7 @@ public class LuceneService {
 
     /** 删除文档 */
     public void delDoc(String indexName, String docName) throws IOException {
-        Directory directory = indexDirMap.get(indexName).getValue();
+        Directory directory = indexDirMap.get(indexName).getDirectory();
 
         try (IndexWriter iwriter = new IndexWriter(directory, new IndexWriterConfig(analyzer))) {
             iwriter.deleteDocuments(new Term("_name", docName));
@@ -110,7 +119,7 @@ public class LuceneService {
         List<Document> result = new LinkedList<>();
         // ** 开始查询
         // Now search the index:
-        try (DirectoryReader ireader = DirectoryReader.open(indexDirMap.get(indexName).getValue())) {
+        try (DirectoryReader ireader = DirectoryReader.open(indexDirMap.get(indexName).getDirectory())) {
             IndexSearcher isearcher = new IndexSearcher(ireader);
             // Parse a simple query that searches for "text":
             QueryParser parser = new QueryParser("_content", analyzer);
