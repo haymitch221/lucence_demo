@@ -22,7 +22,7 @@ public class LuceneTests02 {
         String indexName = "luceneIndex1";
         lcs.newIndex(indexName);
         lcs.saveDoc(indexName, "文档1", "凡尔纳之后，纽约时报评价最好看的环球冒险小说");
-        lcs.saveDoc(indexName, "文档1", "这本小说英文版上市一周即空间纽约时报畅销书青少年排行榜冒险类第5名");
+        lcs.saveDoc(indexName, "文档2", "这本小说英文版上市一周即空间纽约时报畅销书青少年排行榜冒险类第5名");
         List<Document> docs1 = lcs.searchDoc(indexName, "环球");
         List<Document> docs2 = lcs.searchDoc(indexName, "环游");
         List<Document> docs3 = lcs.searchDoc(indexName, "环球电影");
