@@ -24,9 +24,13 @@ import org.apache.lucene.util.IOUtils;
 import org.springframework.util.DigestUtils;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 每个文档由若干个 field:text 组成
@@ -41,9 +45,12 @@ import java.util.*;
  * - - 根据 关键词 在某个 field 中查询
  * - - query方式 关键词也会分词
  * - - term方式 关键词不会分词
- * FIXME [TODO.1] 索引数据存储在系统临时目录中，没有实现数据的恢复
+ * 索引数据存储在指定的系统目录中，可恢复索引数据
  */
 public class LuceneService implements IDocIndexService {
+
+    /** 简单的方式设置索引数据文件公共存储的位置，这个是要作为公共配置的 */
+    public static String DEFAULT_INDEX_FS_PATH_BASE = "D:/_lucene_tests/";
 
     public static final String FIELD_DOC_INDEX = "_index";
     public static final String FIELD_DOC_ID = "_id";
@@ -71,7 +78,9 @@ public class LuceneService implements IDocIndexService {
     /** 新建索引 */
     @Override
     public void newIndex(String indexName) throws IOException {
-        Path indexPath = Files.createTempDirectory(indexName);
+        // 使用系统路径实现，路径上的目录不存在都会级联创建
+        Path dir = FileSystems.getDefault().getPath(DEFAULT_INDEX_FS_PATH_BASE + indexName);
+        Path indexPath = Files.createDirectories(dir);
         Directory directory = FSDirectory.open(indexPath);
         indexDirMap.put(indexName, new TempDirectory(indexPath, directory));
     }

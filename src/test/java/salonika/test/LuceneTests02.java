@@ -9,6 +9,7 @@ import salonika.demo.IDocIndexService;
 import salonika.demo.LuceneService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,6 +17,10 @@ import java.util.List;
  */
 public class LuceneTests02 {
 
+    /**
+     * 测试01
+     * 基本的文档查询
+     */
     @Test
     public void test01() throws IOException, ParseException {
         IDocIndexService lcs = new LuceneService(new SmartChineseAnalyzer());
@@ -46,6 +51,10 @@ public class LuceneTests02 {
         lcs.closeAll();
     }
 
+    /**
+     * 测试02
+     * 添加、修改、删除
+     */
     @Test
     public void test02() throws IOException, ParseException {
         IDocIndexService lcs = new LuceneService(new SmartChineseAnalyzer());
@@ -71,4 +80,31 @@ public class LuceneTests02 {
         lcs.closeAll();
     }
 
+    /**
+     * 测试03
+     * 索引恢复
+     */
+    @Test
+    public void test03() throws IOException {
+        IDocIndexService lcs = new LuceneService(new SmartChineseAnalyzer());
+
+        String indexName = "luceneIndex2";
+        lcs.newIndex(indexName);
+
+        List<Document> docs0 = new ArrayList<>();
+        try {
+            docs0.addAll(lcs.allDocs(indexName));
+            Assert.assertEquals(docs0.size(), 2);
+        } catch (IOException e) {
+            // 第一次时会报错，在当前实现范围内为正常现象；该测试用例多此运行 测试索引存储的数据能恢复
+            Assert.assertEquals(docs0.size(), 0);
+        }
+
+        lcs.saveDoc(indexName, "文档1", "内容1内容1内容1内容1");
+        lcs.saveDoc(indexName, "文档2", "内容2内容2内容2内容2");
+
+        List<Document> docs = lcs.allDocs(indexName); // 每次查询的都是快照，实际存储在文档发生变化后跟随变化
+
+        Assert.assertEquals(docs.size(), 2);
+    }
 }
