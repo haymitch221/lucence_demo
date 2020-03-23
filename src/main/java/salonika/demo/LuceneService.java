@@ -12,6 +12,7 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -20,6 +21,7 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.IOUtils;
+import org.springframework.util.DigestUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,6 +46,7 @@ import java.util.*;
 public class LuceneService {
 
     public static final String FIELD_DOC_INDEX = "_index";
+    public static final String FIELD_DOC_ID = "_id";
     public static final String FIELD_DOC_NAME = "_name";
     public static final String FIELD_DOC_CONTENT = "_content";
 
@@ -89,19 +92,20 @@ public class LuceneService {
     }
 
     /**
-     * 添加文档, 文档名称具有唯一性（后同），
-     * FIXME [TODO.2] 还没有实现 已存在时为修改 的功能，即每次save都是新的文档
+     * 添加文档, 文档名称具有唯一性（即其md5作为了id，后同），
+     * FIXME [TODO.2] 还没有实现修改 的功能
      */
-    public void saveDoc(String indexName, String docName, String docContent) throws IOException {
+    public void addDoc(String indexName, String docName, String docContent) throws IOException {
         Directory directory = indexDirMap.get(indexName).getDirectory();
 
         try (IndexWriter iwriter = new IndexWriter(directory, new IndexWriterConfig(analyzer))) {
             Document doc = new Document();
-
             // 使用 StringField 让文本不分词，可用于名称等
             // 使用 TextField 让文本依照 analyzer 的类型分词，这是默认的实现
+            // 使用 docName 的 md5 作为唯一标识
             doc.add(new StringField(FIELD_DOC_INDEX, indexName, Field.Store.YES));
-            doc.add(new StringField(FIELD_DOC_NAME, docName, Field.Store.YES));
+            doc.add(new StringField(FIELD_DOC_ID, DigestUtils.md5DigestAsHex(docName.getBytes()), Field.Store.YES));
+            doc.add(new TextField(FIELD_DOC_NAME, docName, Field.Store.YES));
             doc.add(new TextField(FIELD_DOC_CONTENT, docContent, Field.Store.YES));
             iwriter.addDocument(doc);
         }
@@ -109,13 +113,13 @@ public class LuceneService {
 
     /**
      * 删除文档
-     * 根据文档的名称删除，文档的名称没有分词，这里需要直接使用全名
+     * 根据文档的名称md5作为的id删除
      */
     public void delDoc(String indexName, String docName) throws IOException {
         Directory directory = indexDirMap.get(indexName).getDirectory();
 
         try (IndexWriter iwriter = new IndexWriter(directory, new IndexWriterConfig(analyzer))) {
-            iwriter.deleteDocuments(new Term("_name", docName));
+            iwriter.deleteDocuments(new Term(FIELD_DOC_ID, DigestUtils.md5DigestAsHex(docName.getBytes())));
         }
     }
 
@@ -126,8 +130,8 @@ public class LuceneService {
         // Now search the index:
         try (DirectoryReader ireader = DirectoryReader.open(indexDirMap.get(indexName).getDirectory())) {
             IndexSearcher isearcher = new IndexSearcher(ireader);
-            // Parse a simple query that searches for "text":
-            QueryParser parser = new QueryParser("_content", analyzer);
+            // 使用多字段查询器来匹配关键词
+            QueryParser parser = new MultiFieldQueryParser(new String[]{FIELD_DOC_NAME, FIELD_DOC_CONTENT}, analyzer);
             Query query = parser.parse(keywords);
             ScoreDoc[] hits = isearcher.search(query, 10).scoreDocs;
             // Iterate through the results:
@@ -140,19 +144,19 @@ public class LuceneService {
     }
 
     /** 返回所有文档 */
-        public List<Document> allDocs(String indexName) throws IOException {
-            List<Document> result = new ArrayList<>();
-            // ** 开始查询
-            // Now search the index:
-            try (DirectoryReader ireader = DirectoryReader.open(indexDirMap.get(indexName).getDirectory())) {
-                IndexSearcher isearcher = new IndexSearcher(ireader);
-                // Iterate through the results:
-                for (int i = 0; i < ireader.maxDoc(); i ++) {
-                    Document hitDoc = isearcher.doc(i);
-                    result.add(hitDoc);
-                }
+    public List<Document> allDocs(String indexName) throws IOException {
+        List<Document> result = new ArrayList<>();
+        // ** 开始查询
+        // Now search the index:
+        try (DirectoryReader ireader = DirectoryReader.open(indexDirMap.get(indexName).getDirectory())) {
+            IndexSearcher isearcher = new IndexSearcher(ireader);
+            // Iterate through the results:
+            for (int i = 0; i < ireader.maxDoc(); i ++) {
+                Document hitDoc = isearcher.doc(i);
+                result.add(hitDoc);
             }
-            return result;
         }
+        return result;
+    }
 
 }
