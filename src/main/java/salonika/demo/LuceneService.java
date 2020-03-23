@@ -92,8 +92,10 @@ public class LuceneService {
     }
 
     /**
-     * 添加文档, 文档名称具有唯一性（即其md5作为了id，后同），
-     * FIXME [TODO.2] 还没有实现修改 的功能
+     * 添加文档, 文档名称具有唯一性（即其md5作为了id，后同）
+     * 同一个名称会重复添加
+     *
+     * 所以使用saveDoc方法更具有实际意义
      */
     public void addDoc(String indexName, String docName, String docContent) throws IOException {
         Directory directory = indexDirMap.get(indexName).getDirectory();
@@ -109,6 +111,17 @@ public class LuceneService {
             doc.add(new TextField(FIELD_DOC_CONTENT, docContent, Field.Store.YES));
             iwriter.addDocument(doc);
         }
+    }
+
+    /**
+     * 添加未存在的文档或修改已存在的文档
+     * 根据文档名称，先删除已有的文档，然后添加文档
+     *
+     * 采用简单方式，删除再添加；这里并没有使用lucene中IndexWriter的api
+     */
+    public void saveDoc(String indexName, String docName, String docContent) throws IOException{
+        delDoc(indexName, docName);
+        addDoc(indexName, docName, docContent);
     }
 
     /**

@@ -50,19 +50,19 @@ public class LuceneTests02 {
         LuceneService lcs = new LuceneService(new SmartChineseAnalyzer());
         String indexName = "luceneIndex1";
         lcs.newIndex(indexName);
-        lcs.addDoc(indexName, "文档1的名称", "凡尔纳之后，纽约时报评价最好看的环球冒险小说");
-        lcs.addDoc(indexName, "文档2的名称", "这本小说英文版上市一周即空间纽约时报畅销书青少年排行榜冒险类第5名");
-        lcs.addDoc(indexName, "文档2的名称", "这本小说英文版上市一周即空降纽约时报畅销书青少年排行榜冒险类第5名。修改了一下");
+        lcs.saveDoc(indexName, "文档1的名称", "凡尔纳之后，纽约时报评价最好看的环球冒险小说");
+        lcs.saveDoc(indexName, "文档2的名称", "这本小说英文版上市一周即空间纽约时报畅销书青少年排行榜冒险类第5名");
+        lcs.saveDoc(indexName, "文档2的名称", "这本小说英文版上市一周即空降纽约时报畅销书青少年排行榜冒险类第5名。修改了一下");
 
         List<Document> docs1 = lcs.allDocs(indexName);
-        Assert.assertEquals(docs1.size(), 3);
+        Assert.assertEquals(docs1.size(), 2);
 
         // 删除 文档1，本次删除1个文档
         lcs.delDoc(indexName, "文档1的名称");
         List<Document> docs2 = lcs.allDocs(indexName);
-        Assert.assertEquals(docs2.size(), 2);
+        Assert.assertEquals(docs2.size(), 1);
 
-        // 删除 文档2，本次删除2个文档
+        // 删除 文档2，本次删除1个文档
         lcs.delDoc(indexName, "文档2的名称");
         List<Document> docs3 = lcs.allDocs(indexName);
         Assert.assertEquals(docs3.size(), 0);
