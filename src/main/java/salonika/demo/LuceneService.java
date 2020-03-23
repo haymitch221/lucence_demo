@@ -6,6 +6,7 @@ import lombok.Data;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
@@ -38,7 +39,7 @@ import java.util.*;
  * - - 根据 关键词 在某个 field 中查询
  * - - query方式 关键词也会分词
  * - - term方式 关键词不会分词
- * FIXME [TODO.1] 存储在系统临时目录中，没有实现数据的恢复
+ * FIXME [TODO.1] 索引数据存储在系统临时目录中，没有实现数据的恢复
  */
 public class LuceneService {
 
@@ -54,11 +55,12 @@ public class LuceneService {
 
     @Data
     @AllArgsConstructor
-    public class TempDirectory{
+    public static class TempDirectory{
         private Path path;
         private Directory directory;
     }
 
+    /** constructor */
     public LuceneService(Analyzer analyzer){
         this.analyzer = analyzer;
     }
@@ -96,16 +98,18 @@ public class LuceneService {
         try (IndexWriter iwriter = new IndexWriter(directory, new IndexWriterConfig(analyzer))) {
             Document doc = new Document();
 
-            doc.add(new Field(FIELD_DOC_INDEX, indexName, TextField.TYPE_STORED));
-            doc.add(new Field(FIELD_DOC_NAME, docName, TextField.TYPE_STORED));
-            doc.add(new Field(FIELD_DOC_CONTENT, docContent, TextField.TYPE_STORED));
+            // 使用 StringField 让文本不分词，可用于名称等
+            // 使用 TextField 让文本依照 analyzer 的类型分词，这是默认的实现
+            doc.add(new StringField(FIELD_DOC_INDEX, indexName, Field.Store.YES));
+            doc.add(new StringField(FIELD_DOC_NAME, docName, Field.Store.YES));
+            doc.add(new TextField(FIELD_DOC_CONTENT, docContent, Field.Store.YES));
             iwriter.addDocument(doc);
         }
     }
 
     /**
-     * 删除文档，
-     * FIXME [TODO.3] 并没有实现删掉
+     * 删除文档
+     * 根据文档的名称删除，文档的名称没有分词，这里需要直接使用全名
      */
     public void delDoc(String indexName, String docName) throws IOException {
         Directory directory = indexDirMap.get(indexName).getDirectory();
