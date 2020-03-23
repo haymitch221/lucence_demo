@@ -5,6 +5,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import salonika.demo.IDocIndexService;
 import salonika.demo.LuceneService;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class LuceneTests02 {
 
     @Test
     public void test01() throws IOException, ParseException {
-        LuceneService lcs = new LuceneService(new SmartChineseAnalyzer());
+        IDocIndexService lcs = new LuceneService(new SmartChineseAnalyzer());
 
         String indexName = "luceneIndex1";
         lcs.newIndex(indexName);
@@ -47,7 +48,7 @@ public class LuceneTests02 {
 
     @Test
     public void test02() throws IOException, ParseException {
-        LuceneService lcs = new LuceneService(new SmartChineseAnalyzer());
+        IDocIndexService lcs = new LuceneService(new SmartChineseAnalyzer());
         String indexName = "luceneIndex1";
         lcs.newIndex(indexName);
         lcs.saveDoc(indexName, "文档1的名称", "凡尔纳之后，纽约时报评价最好看的环球冒险小说");

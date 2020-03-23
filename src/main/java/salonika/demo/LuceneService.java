@@ -43,7 +43,7 @@ import java.util.*;
  * - - term方式 关键词不会分词
  * FIXME [TODO.1] 索引数据存储在系统临时目录中，没有实现数据的恢复
  */
-public class LuceneService {
+public class LuceneService implements IDocIndexService {
 
     public static final String FIELD_DOC_INDEX = "_index";
     public static final String FIELD_DOC_ID = "_id";
@@ -69,13 +69,15 @@ public class LuceneService {
     }
 
     /** 新建索引 */
+    @Override
     public void newIndex(String indexName) throws IOException {
         Path indexPath = Files.createTempDirectory(indexName);
         Directory directory = FSDirectory.open(indexPath);
         indexDirMap.put(indexName, new TempDirectory(indexPath, directory));
     }
 
-    /** 关闭索引 */
+    /** 关闭索引并删除 */
+    @Override
     public void close(String indexName) throws IOException {
         indexDirMap.get(indexName).getDirectory().close();
         IOUtils.rm(indexDirMap.get(indexName).getPath());
@@ -83,6 +85,7 @@ public class LuceneService {
     }
 
     /** 关闭所有索引并删除 */
+    @Override
     public void closeAll() throws IOException {
         for (TempDirectory td : indexDirMap.values()) {
             td.getDirectory().close();
@@ -97,6 +100,7 @@ public class LuceneService {
      *
      * 所以使用saveDoc方法更具有实际意义
      */
+    @Override
     public void addDoc(String indexName, String docName, String docContent) throws IOException {
         Directory directory = indexDirMap.get(indexName).getDirectory();
 
@@ -119,6 +123,7 @@ public class LuceneService {
      *
      * 采用简单方式，删除再添加；这里并没有使用lucene中IndexWriter的api
      */
+    @Override
     public void saveDoc(String indexName, String docName, String docContent) throws IOException{
         delDoc(indexName, docName);
         addDoc(indexName, docName, docContent);
@@ -128,6 +133,7 @@ public class LuceneService {
      * 删除文档
      * 根据文档的名称md5作为的id删除
      */
+    @Override
     public void delDoc(String indexName, String docName) throws IOException {
         Directory directory = indexDirMap.get(indexName).getDirectory();
 
@@ -137,6 +143,7 @@ public class LuceneService {
     }
 
     /** 查询文档 */
+    @Override
     public List<Document> searchDoc(String indexName, String keywords) throws IOException, ParseException {
         List<Document> result = new ArrayList<>();
         // ** 开始查询
@@ -157,6 +164,7 @@ public class LuceneService {
     }
 
     /** 返回所有文档 */
+    @Override
     public List<Document> allDocs(String indexName) throws IOException {
         List<Document> result = new ArrayList<>();
         // ** 开始查询
